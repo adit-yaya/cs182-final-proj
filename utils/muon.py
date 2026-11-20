@@ -33,12 +33,14 @@ def zeropower_via_newtonschulz5(G, steps: int):
     return X
 
 
-def muon_update(grad, momentum, beta=0.95, ns_steps=5, nesterov=True):
+def muon_update(grad, momentum, beta=0.95, ns_steps=5, nesterov=True,
+                orthogonalizer=None):
     momentum.lerp_(grad, 1 - beta)
     update = grad.lerp_(momentum, beta) if nesterov else momentum
     if update.ndim == 4: # for the case of conv filters
         update = update.view(len(update), -1)
-    update = zeropower_via_newtonschulz5(update, steps=ns_steps)
+    orthogonalizer = orthogonalizer or zeropower_via_newtonschulz5
+    update = orthogonalizer(update, ns_steps)
     update *= max(1, update.size(-2) / update.size(-1))**0.5
     return update
 
@@ -102,9 +104,12 @@ class SingleDeviceMuon(torch.optim.Optimizer):
     """
     Muon variant for usage in non-distributed settings.
     """
-    def __init__(self, params, lr=0.02, weight_decay=0, momentum=0.95):
+    def __init__(self, params, lr=0.02, weight_decay=0, momentum=0.95,
+                 ns_steps=5, orthogonalizer=None):
         defaults = dict(lr=lr, weight_decay=weight_decay, momentum=momentum)
         super().__init__(params, defaults)
+        self.ns_steps = ns_steps
+        self.orthogonalizer = orthogonalizer or zeropower_via_newtonschulz5
 
     @torch.no_grad()
     def step(self, closure=None):
@@ -122,7 +127,8 @@ class SingleDeviceMuon(torch.optim.Optimizer):
                 state = self.state[p]
                 if len(state) == 0:
                     state["momentum_buffer"] = torch.zeros_like(p)
-                update = muon_update(p.grad, state["momentum_buffer"], beta=group["momentum"])
+                update = muon_update(p.grad, state["momentum_buffer"], beta=group["momentum"],
+                                     ns_steps=self.ns_steps, orthogonalizer=self.orthogonalizer)
                 p.mul_(1 - group["lr"] * group["weight_decay"])
                 p.add_(update.reshape(p.shape), alpha=-group["lr"])
 

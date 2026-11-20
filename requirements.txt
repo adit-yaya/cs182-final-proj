@@ -1,5 +1,6 @@
 torch>=2.1
 datasets
+pyarrow==24.0.0
 huggingface_hub
 tiktoken
 numpy
