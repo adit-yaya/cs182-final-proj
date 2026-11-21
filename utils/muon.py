@@ -33,6 +33,26 @@ def zeropower_via_newtonschulz5(G, steps: int):
     return X
 
 
+def tikhonov_via_gram_newtonschulz(G, steps: int, lam: float):
+    """Apply the MuonTikh Gram-NS approximation to a Frobenius-normalized matrix."""
+    assert G.ndim == 2
+    transposed = G.size(-2) > G.size(-1)
+    X = (G.mT if transposed else G).float()
+    X = X / (X.norm() + 1e-7)
+    gram = X @ X.mT
+    eye = torch.eye(gram.size(-1), device=gram.device, dtype=gram.dtype)
+    gram = gram + lam * eye
+    Q = eye
+    a, b, c = 3.4445, -4.7750, 2.0315
+    for _ in range(steps):
+        polynomial = b * gram + c * (gram @ gram)
+        Q = Q @ polynomial + a * Q
+        gram_polynomial = gram @ polynomial + a * gram
+        gram = polynomial @ gram_polynomial + a * gram_polynomial
+    X = Q @ X
+    return X.mT if transposed else X
+
+
 def muon_update(grad, momentum, beta=0.95, ns_steps=5, nesterov=True,
                 orthogonalizer=None):
     momentum.lerp_(grad, 1 - beta)

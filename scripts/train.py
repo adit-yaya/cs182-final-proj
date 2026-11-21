@@ -17,7 +17,8 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from utils.data import DATASET, SPLIT_POLICY, batches, evaluate
-from utils.muon import SingleDeviceMuon, zeropower_via_newtonschulz5
+from utils.muon import (SingleDeviceMuon, tikhonov_via_gram_newtonschulz,
+                        zeropower_via_newtonschulz5)
 from utils.capture import capture_inputs
 from utils.polar_express import PolarExpress
 from models.model import GPT, GPTConfig
@@ -32,7 +33,13 @@ def train(args, data):
     hidden = [(n, p) for n, p in model.named_parameters()
               if n.startswith("transformer.h.") and p.ndim == 2]
     hidden_ids = {id(p) for _, p in hidden}
-    orthogonalizer = zeropower_via_newtonschulz5 if args.method == "ns" else PolarExpress
+    if args.method == "ns":
+        orthogonalizer = zeropower_via_newtonschulz5
+    elif args.method == "pe":
+        orthogonalizer = PolarExpress
+    else:
+        orthogonalizer = lambda matrix, steps: tikhonov_via_gram_newtonschulz(
+            matrix, steps, args.tikh_lambda)
     muon = SingleDeviceMuon([p for _, p in hidden], lr=0.02, momentum=0.95,
                             ns_steps=args.filter_steps, orthogonalizer=orthogonalizer)
     adam = torch.optim.AdamW([p for p in model.parameters() if id(p) not in hidden_ids],
@@ -90,6 +97,7 @@ def train(args, data):
     return dict(config=vars(config), data=data, seed=args.seed, steps=args.steps,
                 batch=args.batch, capture=args.capture, device=args.device,
                 method=args.method, filter_steps=args.filter_steps,
+                tikh_lambda=args.tikh_lambda if args.method == "tikh" else None,
                 pe_compile=args.pe_compile if args.method == "pe" else None,
                 shuffle_buffer=args.shuffle_buffer, eval_every=args.eval_every,
                 eval_batches=args.eval_batches, muon_lr=0.02, momentum=0.95, adam_lr=0.003,
@@ -104,8 +112,9 @@ def main():
     parser.add_argument("--subset", default="sample-10BT", help="FineWeb config; default selects its 10B-token sample")
     parser.add_argument("--revision", default="main", help="Resolved to a commit before streaming")
     parser.add_argument("--out", type=Path, help="Output directory; defaults to results/train_<method><steps>")
-    parser.add_argument("--method", choices=["ns", "pe"], default="ns")
+    parser.add_argument("--method", choices=["ns", "pe", "tikh"], default="ns")
     parser.add_argument("--filter-steps", type=int, default=5)
+    parser.add_argument("--tikh-lambda", type=float, default=0.0)
     parser.add_argument("--pe-compile", choices=["inductor", "eager"], default="inductor",
                         help="PE execution mode; eager bypasses torch.compile/Inductor")
     parser.add_argument("--layers", type=int, default=6)
@@ -126,6 +135,8 @@ def main():
         parser.error("dimensions, batch counts, intervals, and buffer size must be positive")
     if args.filter_steps < 1:
         parser.error("filter steps must be positive")
+    if args.tikh_lambda < 0:
+        parser.error("Tikhonov lambda must be nonnegative")
     if args.width % args.heads:
         parser.error("width must be divisible by heads")
     if not any(1 <= step <= args.steps for step in args.capture):
@@ -149,7 +160,8 @@ def main():
                     source_sha256={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
                                    for p in [ROOT / "models/model.py", ROOT / "utils/muon.py",
                                              ROOT / "utils/polar_express.py",
-                                             ROOT / "utils/data.py", ROOT / "utils/capture.py", Path(__file__).resolve()]})
+                                             ROOT / "utils/data.py", ROOT / "utils/capture.py",
+                                             Path(__file__).resolve()]})
     (args.out / "results.json").write_text(json.dumps(metadata, indent=2))
 
 
