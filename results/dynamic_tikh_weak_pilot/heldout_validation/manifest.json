@@ -1,0 +1,38 @@
+{
+  "data": {
+    "dataset": "HuggingFaceFW/fineweb",
+    "subset": "sample-10BT",
+    "revision": "9bb295ddab0e05d785b879661af7260fed5140fc",
+    "tokenizer": "gpt2",
+    "split_policy": "sha256-text-mod100:0=test,1=validation,2..99=train:v1"
+  },
+  "split": "validation",
+  "config": {
+    "vocab_size": 50257,
+    "block_size": 32,
+    "n_layer": 6,
+    "n_head": 8,
+    "n_embd": 88
+  },
+  "prefix_targets": 2560,
+  "expanded_targets": 131072,
+  "block_sequences": 64,
+  "sequence_tokens": 32,
+  "token_sha256_le_i64_including_prefix": "eb7fdb91603fccc23f2194ae4d4cacdb81b035041e20a935801b73bc0928ad87",
+  "checkpoint_sha256": {
+    "17/fixed_zero": "d3fbfba1ee1558e40a9f0a37deae1fba84c56ca34a4c2213db8b96388042ba4d",
+    "17/fixed_weak": "1f6accafd525ebf92922feedc7d13a0d4f286fa4da0581a39e58810e431e2395",
+    "17/weak_to_zero": "37dc7cd7ff19f4c6a495e5b4e78ce83d4e1bb1663fcad705901010e5546ef189",
+    "18/fixed_zero": "fc0a9ca66850d76a352570accee51a86782de6bc8ffddb401b3749c23513d168",
+    "18/fixed_weak": "07ea793495d6939613191301037d272334cc1c680b1c0ae6e40dea9cf0faf28a",
+    "18/weak_to_zero": "ea1a70af6bfe9256d6277ca24c6062ff4af863afdd0b277d31b28f6dce6bfea1",
+    "19/fixed_zero": "7cdf5b7556b0238deef8053f0fa25ff002014acc2139f214d58d11e4819a6c3a",
+    "19/fixed_weak": "9b4dfc2f274fcd5c98eca482cba7b4555cb02de6c12e4617a754fc7c9ae86c4c",
+    "19/weak_to_zero": "cd47448bb6f22d6a9eb05146fb0cc1e7633e562968f484b9f4e9334645c8fa3b"
+  },
+  "torch": "2.15.0",
+  "device": "cpu",
+  "threads": 4,
+  "deterministic": true,
+  "source_sha256": "cf6982fac532d886ecb6d0b202b3b195e2bd85f7b74b8e938484407e34a24143"
+}

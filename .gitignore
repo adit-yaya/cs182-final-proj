@@ -221,3 +221,29 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local training artifacts
+/results/**/checkpoint.pt
+/results/**/momenta.pt
+
+# Regenerable pilot diagnostics. Keep the evidence cited in the final analysis.
+/results/architecture_spectral_grid/analysis/*
+!/results/architecture_spectral_grid/analysis/depth-seed-replication.csv
+!/results/architecture_spectral_grid/analysis/spectral-summary.csv
+/results/depth_filter_pilot/analysis/
+/results/depth_filter_pilot/analysis_seed18/
+/results/depth_filter_pilot/analysis_seed19/
+/results/dynamic_tikh_pilot/analysis/*
+!/results/dynamic_tikh_pilot/analysis/final-results.csv
+!/results/dynamic_tikh_pilot/analysis/switch-loss-summary.csv
+/results/dynamic_tikh_weak_pilot/analysis/*
+!/results/dynamic_tikh_weak_pilot/analysis/final-results.csv
+!/results/dynamic_tikh_weak_pilot/analysis/switch-loss-summary.csv
+!/results/dynamic_tikh_weak_pilot/analysis/same-input-endpoints.csv
+/results/dynamic_tikh_weak_pilot/replication_analysis/*
+!/results/dynamic_tikh_weak_pilot/replication_analysis/same-input-endpoints.csv
+!/results/dynamic_tikh_weak_pilot/replication_analysis/spectral-summary.csv
+!/results/dynamic_tikh_weak_pilot/replication_analysis/validation-trajectories.csv
+
+# Standalone export of the Markdown report
+/results/final-analysis/report.html
