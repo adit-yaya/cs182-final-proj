@@ -123,7 +123,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--subset", default="sample-10BT", help="FineWeb config; default selects its 10B-token sample")
     parser.add_argument("--revision", default="main", help="Resolved to a commit before streaming")
-    parser.add_argument("--out", type=Path, help="Output directory; defaults to results/train_<method><steps>")
+    parser.add_argument("--out", type=Path, help="Output directory (default: train_<method><steps> under the method’s results family)")
     parser.add_argument("--method", choices=["ns", "pe", "tikh"], default="ns")
     parser.add_argument("--filter-steps", type=int, default=5)
     parser.add_argument("--tikh-lambda", type=float, default=0.0)
@@ -165,7 +165,8 @@ def main():
     if not any(1 <= step <= args.steps for step in args.capture):
         parser.error("at least one capture step must be within training")
     if args.out is None:
-        args.out = ROOT / "results" / f"train_{args.method}{args.filter_steps}"
+        family = "optimization-experiments" if args.method == "tikh" else "spectral-analysis"
+        args.out = ROOT / "results" / family / f"train_{args.method}{args.filter_steps}"
     if args.method == "pe" and args.pe_compile == "eager":
         torch.compiler.set_stance("force_eager")
     os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")

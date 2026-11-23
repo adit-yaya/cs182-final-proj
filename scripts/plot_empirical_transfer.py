@@ -56,7 +56,7 @@ def apply_filter(matrix, method, steps):
 
 
 def empirical_points(name, run, method, steps):
-    snapshots = torch.load(ROOT / "results" / run / "momenta.pt",
+    snapshots = torch.load(ROOT / "results/spectral-analysis" / run / "momenta.pt",
                            map_location="cpu", weights_only=True)
     xs, ys, rows, naive_values = [], [], [], []
     for snap in snapshots:
@@ -93,7 +93,7 @@ def main():
     torch.set_num_threads(4)
     # Match the completed PE training runs and avoid the local macOS Inductor crash.
     torch.compiler.set_stance("force_eager")
-    out = ROOT / "results" / "layer_stage_analysis"
+    out = ROOT / "results/spectral-analysis" / "layer_stage_analysis"
     out.mkdir(parents=True, exist_ok=True)
     grid = np.geomspace(1e-5, 1.0, 600)
     bins = np.geomspace(1e-5, 1.0, 46)

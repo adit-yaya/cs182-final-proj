@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 from models.model import GPT, GPTConfig
 from utils.data import batches, SPLIT_POLICY
 
-PILOT = ROOT / 'results/dynamic_tikh_weak_pilot'
+PILOT = ROOT / 'results/optimization-experiments/dynamic_tikh_weak_pilot'
 OUT = PILOT / 'heldout_validation'
 SETTINGS = ('fixed_zero', 'fixed_weak', 'weak_to_zero')
 CONFIG = dict(vocab_size=50257, block_size=32, n_layer=6, n_head=8, n_embd=88)

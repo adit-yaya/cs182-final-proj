@@ -19,14 +19,14 @@ common=(
 
 if [[ "$mode" == --architecture ]]; then
     for configuration in 64:6 128:6 88:4; do
-        output="results/architecture_spectral_grid/w${configuration%:*}_d${configuration#*:}_tikh_lam0_seed17"
+        output="results/spectral-analysis/architecture_spectral_grid/w${configuration%:*}_d${configuration#*:}_tikh_lam0_seed17"
         if [[ -e "$output" ]]; then
             printf 'Refusing to overwrite %s\n' "$output" >&2
             exit 1
         fi
     done
     for configuration in 64:6 128:6 88:4; do
-        output="results/architecture_spectral_grid/w${configuration%:*}_d${configuration#*:}_tikh_lam0_seed17"
+        output="results/spectral-analysis/architecture_spectral_grid/w${configuration%:*}_d${configuration#*:}_tikh_lam0_seed17"
         python3 scripts/train.py "${common[@]}" \
             --width "${configuration%:*}" --layers "${configuration#*:}" --tikh-lambda 0 \
             --out "$output" &
@@ -63,6 +63,6 @@ if [[ "$mode" == --architecture ]]; then
 fi
 
 python3 scripts/train.py "${common[@]}" --layers 8 --width 88 --tikh-lambda 0 \
-    --out results/depth_filter_pilot/w88_d8_tikh_lam0_seed17
+    --out results/optimization-experiments/depth_filter_pilot/w88_d8_tikh_lam0_seed17
 python3 scripts/train.py "${common[@]}" --layers 8 --width 88 --tikh-lambda 6.1352038e-5 \
-    --out results/depth_filter_pilot/w88_d8_tikh_lam6p14e-5_seed17
+    --out results/optimization-experiments/depth_filter_pilot/w88_d8_tikh_lam6p14e-5_seed17

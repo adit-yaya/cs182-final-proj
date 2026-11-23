@@ -11,7 +11,7 @@ import numpy as np
 
 
 RESULTS = Path(__file__).resolve().parents[1] / "results"
-HELD_OUT = "dynamic_tikh_weak_pilot/heldout_validation"
+HELD_OUT = "optimization-experiments/dynamic_tikh_weak_pilot/heldout_validation"
 SEEDS = (17, 18, 19)
 BLUE, ORANGE, TEAL, PURPLE, GREY = "#245C85", "#A44C16", "#087767", "#754987", "#465461"
 COLORS = (BLUE, ORANGE, TEAL)
@@ -46,9 +46,9 @@ def save_figure(figure, output, name):
 
 
 def stage_and_layer(output):
-    grid = read_csv("architecture_spectral_grid/analysis/spectral-summary.csv")
-    depths = read_csv("architecture_spectral_grid/analysis/depth-seed-replication.csv")
-    native = read_csv("dynamic_tikh_weak_pilot/replication_analysis/spectral-summary.csv")
+    grid = read_csv("spectral-analysis/architecture_spectral_grid/analysis/spectral-summary.csv")
+    depths = read_csv("spectral-analysis/architecture_spectral_grid/analysis/depth-seed-replication.csv")
+    native = read_csv("optimization-experiments/dynamic_tikh_weak_pilot/replication_analysis/spectral-summary.csv")
     figure, (position, projection, width) = plt.subplots(1, 3, figsize=(12, 3.45), layout="constrained")
     metric = "fraction_sv_le_0_8"
     depth_table = []
@@ -100,9 +100,9 @@ def stage_and_layer(output):
 
 
 def fixed_filtering(output, losses):
-    sweep = read_csv("muontikh_lambda_sweep/lambda-transfer-curves.csv")
-    endpoints = read_csv("dynamic_tikh_weak_pilot/analysis/same-input-endpoints.csv")
-    depth_losses = read_csv("depth_filter_pilot/seed-replication-summary.csv")
+    sweep = read_csv("optimization-experiments/muontikh_lambda_sweep/lambda-transfer-curves.csv")
+    endpoints = read_csv("optimization-experiments/dynamic_tikh_weak_pilot/analysis/same-input-endpoints.csv")
+    depth_losses = read_csv("optimization-experiments/depth_filter_pilot/seed-replication-summary.csv")
     figure, (response, norm, performance) = plt.subplots(1, 3, figsize=(12, 3.6), layout="constrained")
     settings = [("0", "0", GREY, "-"), ("6.89e-06", "W", TEAL, "--"),
                 ("6.14e-05", "H", ORANGE, "-."), ("0.000683", "Highest", PURPLE, ":")]

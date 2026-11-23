@@ -107,7 +107,7 @@ def ideal_response(x, name):
 
 
 def depth_pilot(seed=17):
-    root = ROOT / "results"
+    root = ROOT / "results/optimization-experiments"
     pilot = root / "depth_filter_pilot"
     paths = [root / "muontikh_lambda_sweep" / name for name in
              ("tikh_lam0_seed_17", "tikh_lam6p14e-5_seed_17")]
@@ -298,8 +298,8 @@ def architecture_spectra(snapshot, metadata, direction_writer):
 
 
 def architecture_report():
-    root = ROOT / "results"
-    grid = root / "architecture_spectral_grid"
+    root = ROOT / "results/optimization-experiments"
+    grid = ROOT / "results/spectral-analysis/architecture_spectral_grid"
     paths = {(88, 6): root / "muontikh_lambda_sweep/tikh_lam0_seed_17",
              (88, 8): root / "depth_filter_pilot/w88_d8_tikh_lam0_seed17"}
     paths.update({(width, depth): grid / f"w{width}_d{depth}_tikh_lam0_seed17"
@@ -425,7 +425,7 @@ def architecture_figures(rows, losses, out):
 
 
 def dynamic_pilot_report(weak=False):
-    root = ROOT / "results"
+    root = ROOT / "results/optimization-experiments"
     pilot = root / ("dynamic_tikh_weak_pilot" if weak else "dynamic_tikh_pilot")
     out = pilot / "analysis"
     if out.exists():
@@ -620,7 +620,7 @@ def dynamic_pilot_figures(metadata, spectral, losses, operators, out):
 
 
 def switch_loss_report(weak=False):
-    root = ROOT / "results"
+    root = ROOT / "results/optimization-experiments"
     pilot = root / ("dynamic_tikh_weak_pilot" if weak else "dynamic_tikh_pilot")
     out = pilot / "analysis"
     outputs = [out / f"switch-loss{suffix}" for suffix in (".png", ".csv", "-summary.csv")]
@@ -640,7 +640,7 @@ def switch_loss_report(weak=False):
         fixed_name = ("tikh_lam0_seed_17" if meta["tikh_lambda"] == 0 else
                       "tikh_lam6p89e-6_seed_17" if meta["tikh_lambda"] == 6.8851809e-6
                       else "tikh_lam6p14e-5_seed_17")
-        baseline = ROOT / "results/muontikh_lambda_sweep" / fixed_name
+        baseline = root / "muontikh_lambda_sweep" / fixed_name
         fixed = json.loads((baseline / "results.json").read_text())
         controls = ("config", "data", "seed", "steps", "batch", "shuffle_buffer",
                     "method", "filter_steps", "tikh_lambda", "muon_lr", "momentum", "adam_lr")
@@ -700,7 +700,7 @@ def switch_loss_report(weak=False):
 
 
 def weak_replication_report():
-    root = ROOT / "results"
+    root = ROOT / "results/optimization-experiments"
     pilot = root / "dynamic_tikh_weak_pilot"
     out = pilot / "replication_analysis"
     if out.exists():
@@ -891,7 +891,7 @@ def main():
     if args.depth_pilot:
         depth_pilot(17 if args.seed is None else args.seed)
         return
-    root = ROOT / "results" / "muontikh_lambda_sweep"
+    root = ROOT / "results/optimization-experiments" / "muontikh_lambda_sweep"
     runs = []
     for metadata_path in sorted(root.glob("*/results.json")):
         metadata = json.loads(metadata_path.read_text())

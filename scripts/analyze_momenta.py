@@ -64,7 +64,7 @@ def analyze(snapshots, out):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--momenta", type=Path, required=True)
-    parser.add_argument("--out", type=Path, default=ROOT / "results/analysis")
+    parser.add_argument("--out", type=Path, default=ROOT / "results/spectral-analysis/analysis")
     args = parser.parse_args()
     torch.set_num_threads(4)
     snapshots = torch.load(args.momenta, map_location="cpu", weights_only=True)
