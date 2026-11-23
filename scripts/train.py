@@ -33,13 +33,14 @@ def train(args, data):
     hidden = [(n, p) for n, p in model.named_parameters()
               if n.startswith("transformer.h.") and p.ndim == 2]
     hidden_ids = {id(p) for _, p in hidden}
+    active_lambda = args.tikh_lambda
     if args.method == "ns":
         orthogonalizer = zeropower_via_newtonschulz5
     elif args.method == "pe":
         orthogonalizer = PolarExpress
     else:
         orthogonalizer = lambda matrix, steps: tikhonov_via_gram_newtonschulz(
-            matrix, steps, args.tikh_lambda)
+            matrix, steps, active_lambda)
     muon = SingleDeviceMuon([p for _, p in hidden], lr=0.02, momentum=0.95,
                             ns_steps=args.filter_steps, orthogonalizer=orthogonalizer)
     adam = torch.optim.AdamW([p for p in model.parameters() if id(p) not in hidden_ids],
@@ -56,6 +57,9 @@ def train(args, data):
     snapshots, losses, validation_losses = [], [], []
     start = time.perf_counter()
     for step in range(1, args.steps + 1):
+        active_lambda = (args.tikh_lambda_after
+                         if args.tikh_switch_step is not None and step > args.tikh_switch_step
+                         else args.tikh_lambda)
         phase_start = time.perf_counter()
         if step == 1:
             print("step=1 fetching training batch...", flush=True)
@@ -79,6 +83,9 @@ def train(args, data):
         if step in args.capture:
             with capture_inputs(hidden, step, snapshots, muon):
                 muon.step()
+            if args.method == "tikh":
+                for snapshot in snapshots[-len(hidden):]:
+                    snapshot["tikh_lambda"] = active_lambda
         else:
             muon.step()
         if step == 1:
@@ -98,10 +105,15 @@ def train(args, data):
                 batch=args.batch, capture=args.capture, device=args.device,
                 method=args.method, filter_steps=args.filter_steps,
                 tikh_lambda=args.tikh_lambda if args.method == "tikh" else None,
+                tikh_lambda_after=args.tikh_lambda_after,
+                tikh_switch_step=args.tikh_switch_step,
                 pe_compile=args.pe_compile if args.method == "pe" else None,
                 shuffle_buffer=args.shuffle_buffer, eval_every=args.eval_every,
                 eval_batches=args.eval_batches, muon_lr=0.02, momentum=0.95, adam_lr=0.003,
                 parameters=sum(p.numel() for p in model.parameters()),
+                muon_parameters=sum(p.numel() for _, p in hidden),
+                adam_parameters=sum(p.numel() for p in model.parameters()
+                                    if id(p) not in hidden_ids),
                 training_and_eval_seconds=time.perf_counter() - start,
                 training_tokens=args.steps * args.batch * args.context,
                 losses=losses, validation_losses=validation_losses)
@@ -115,6 +127,10 @@ def main():
     parser.add_argument("--method", choices=["ns", "pe", "tikh"], default="ns")
     parser.add_argument("--filter-steps", type=int, default=5)
     parser.add_argument("--tikh-lambda", type=float, default=0.0)
+    parser.add_argument("--tikh-lambda-after", type=float,
+                        help="Lambda for updates strictly after --tikh-switch-step")
+    parser.add_argument("--tikh-switch-step", type=int,
+                        help="Last update using the initial lambda; keeps optimizer state")
     parser.add_argument("--pe-compile", choices=["inductor", "eager"], default="inductor",
                         help="PE execution mode; eager bypasses torch.compile/Inductor")
     parser.add_argument("--layers", type=int, default=6)
@@ -137,6 +153,13 @@ def main():
         parser.error("filter steps must be positive")
     if args.tikh_lambda < 0:
         parser.error("Tikhonov lambda must be nonnegative")
+    if (args.tikh_switch_step is None) != (args.tikh_lambda_after is None):
+        parser.error("--tikh-switch-step and --tikh-lambda-after must be supplied together")
+    if args.tikh_switch_step is not None:
+        if args.method != "tikh" or not 1 <= args.tikh_switch_step < args.steps:
+            parser.error("Tikh switching requires --method tikh and 1 <= switch step < steps")
+        if args.tikh_lambda_after < 0:
+            parser.error("Tikhonov lambda after switching must be nonnegative")
     if args.width % args.heads:
         parser.error("width must be divisible by heads")
     if not any(1 <= step <= args.steps for step in args.capture):
