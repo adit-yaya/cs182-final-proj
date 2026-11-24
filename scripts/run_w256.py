@@ -1,5 +1,6 @@
 """Run the paired FineWeb BPE experiments from the repository root."""
 
+import argparse
 import hashlib
 import json
 
@@ -59,10 +60,11 @@ NS_PE = {"ns5": ["--method", "ns", "--filter-steps", "5"],
          "pe3": ["--method", "pe", "--filter-steps", "3"],
          "pe5": ["--method", "pe", "--filter-steps", "5"]}
 TIKH = {f"tikh_{lam}": ["--method", "tikh-exact", "--tikh-lambda", lam]
-        for lam in ("1e-6", "1e-4", "1e-2", "0.1", "0")}
+        for lam in ("0", "1e-8", "1e-6", "1e-4", "1e-2")}
 
 
-def run(conditions, *, create_tokenizer, device="cpu", out=OUT):
+def run(conditions, *, create_tokenizer, device="cpu", out=OUT, capture=None):
+    capture_options = [] if capture is None else ["--capture", *map(str, capture)]
     out.mkdir(parents=True, exist_ok=True)
     if not BPE.exists():
         if not create_tokenizer:
@@ -79,8 +81,10 @@ def run(conditions, *, create_tokenizer, device="cpu", out=OUT):
                 train([*options, "--seed", str(seed), "--width", "256", "--heads", "8",
                        "--layers", "6", "--context", "32", "--batch", "8", "--steps", "500",
                        "--device", device, "--bpe", str(BPE), "--spectra", "--revision", REVISION,
-                       "--pe-compile", "eager", "--out", str(directory)])
+                       "--pe-compile", "eager", "--out", str(directory), *capture_options])
             run = json.loads(result.read_text())
+            if capture is not None and run["capture"] != capture:
+                raise ValueError(f"Capture steps mismatch in {directory}")
             if hashlib.sha256(run["data"]["bpe_json"].encode()).hexdigest() != tokenizer_hash:
                 raise ValueError(f"Tokenizer mismatch in {directory}")
             train_hash = train_hash or run["train_sha256"]
@@ -92,4 +96,12 @@ def run(conditions, *, create_tokenizer, device="cpu", out=OUT):
 
 
 if __name__ == "__main__":
-    run({**NS_PE, **TIKH}, create_tokenizer=True)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dense-captures", action="store_true",
+                        help="Capture four extra late steps in results/w256_bpe_dense")
+    args = parser.parse_args()
+    if args.dense_captures:
+        run({**NS_PE, **TIKH}, create_tokenizer=True, out=OUT.with_name("w256_bpe_dense"),
+            capture=[1, 10, 50, 100, 250, 300, 350, 400, 450, 500])
+    else:
+        run({**NS_PE, **TIKH}, create_tokenizer=True)
