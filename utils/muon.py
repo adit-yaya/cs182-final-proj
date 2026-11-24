@@ -33,6 +33,18 @@ def zeropower_via_newtonschulz5(G, steps: int):
     return X
 
 
+def exact_tikhonov_response(s, lam):
+    return s.sign() if lam == 0 else s / (s.square() + lam).sqrt()
+
+
+def exact_tikhonov_polar(matrix, lam):
+    """Apply the exact regularized polar response to Frobenius-normalized momentum."""
+    x = matrix.float()
+    x = x / (x.norm() + 1e-7)
+    u, s, vh = torch.linalg.svd(x, full_matrices=False)
+    return (u * exact_tikhonov_response(s, lam)) @ vh
+
+
 def tikhonov_via_gram_newtonschulz(G, steps: int, lam: float):
     """Apply the MuonTikh Gram-NS approximation to a Frobenius-normalized matrix."""
     assert G.ndim == 2

@@ -18,23 +18,34 @@ def document_split(text):
     return "test" if bucket == 0 else "validation" if bucket == 1 else "train"
 
 
+def documents(data, split):
+    stream = load_dataset(data["dataset"], name=data["subset"], revision=data["revision"],
+                          split="train", streaming=True).select_columns(["text"])
+    return stream.filter(lambda row: document_split(row["text"]) == split)
+
+
 def batches(data, split, batch_size, context, seed=17, shuffle_buffer=1000):
     """Pack documents with EOS separators into fixed-length next-token batches."""
     if data["split_policy"] != SPLIT_POLICY:
         raise ValueError("Checkpoint uses a different split policy.")
     if split not in ("train", "validation", "test"):
         raise ValueError(f"Unknown split: {split}")
-    encoder = tiktoken.get_encoding(data["tokenizer"])
-    stream = load_dataset(data["dataset"], name=data["subset"], revision=data["revision"],
-                          split="train", streaming=True).select_columns(["text"])
-    stream = stream.filter(lambda row: document_split(row["text"]) == split)
+    if "bpe_json" in data:
+        from tokenizers import Tokenizer
+        encoder = Tokenizer.from_str(data["bpe_json"])
+        encode = lambda text: encoder.encode(text).ids
+        eos = encoder.token_to_id("<|endoftext|>")
+    else:
+        encoder = tiktoken.get_encoding(data["tokenizer"])
+        encode, eos = encoder.encode_ordinary, encoder.eot_token
+    stream = documents(data, split)
     if split == "train":
         stream = stream.shuffle(seed=seed, buffer_size=shuffle_buffer)
     buffer = []
     size = batch_size * context
     for row in stream:
-        buffer.extend(encoder.encode_ordinary(row["text"]))
-        buffer.append(encoder.eot_token)
+        buffer.extend(encode(row["text"]))
+        buffer.append(eos)
         offset = 0
         while len(buffer) - offset >= size + 1:
             tokens = torch.tensor(buffer[offset:offset + size + 1], dtype=torch.long)
