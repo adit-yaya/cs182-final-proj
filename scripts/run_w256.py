@@ -59,7 +59,7 @@ NS_PE = {"ns5": ["--method", "ns", "--filter-steps", "5"],
          "pe3": ["--method", "pe", "--filter-steps", "3"],
          "pe5": ["--method", "pe", "--filter-steps", "5"]}
 TIKH = {f"tikh_{lam}": ["--method", "tikh-exact", "--tikh-lambda", lam]
-        for lam in ("1e-6", "1e-4", "1e-2", "0.1")}
+        for lam in ("1e-6", "1e-4", "1e-2", "0.1", "0")}
 
 
 def run(conditions, *, create_tokenizer, device="cpu", out=OUT):
