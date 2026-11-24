@@ -62,8 +62,8 @@ TIKH = {f"tikh_{lam}": ["--method", "tikh-exact", "--tikh-lambda", lam]
         for lam in ("1e-6", "1e-4", "1e-2", "0.1")}
 
 
-def run(conditions, *, create_tokenizer):
-    OUT.mkdir(parents=True, exist_ok=True)
+def run(conditions, *, create_tokenizer, device="cpu", out=OUT):
+    out.mkdir(parents=True, exist_ok=True)
     if not BPE.exists():
         if not create_tokenizer:
             raise SystemExit(f"Copy the NS/PE teammate's tokenizer.json to {BPE} first.")
@@ -73,12 +73,12 @@ def run(conditions, *, create_tokenizer):
     for seed in (24, 25, 26):
         train_hash = None
         for name, options in conditions.items():
-            directory = OUT / f"{name}_seed{seed}"
+            directory = out / f"{name}_seed{seed}"
             result = directory / "results.json"
             if not result.exists():
                 train([*options, "--seed", str(seed), "--width", "256", "--heads", "8",
                        "--layers", "6", "--context", "32", "--batch", "8", "--steps", "500",
-                       "--bpe", str(BPE), "--spectra", "--revision", REVISION,
+                       "--device", device, "--bpe", str(BPE), "--spectra", "--revision", REVISION,
                        "--pe-compile", "eager", "--out", str(directory)])
             run = json.loads(result.read_text())
             if hashlib.sha256(run["data"]["bpe_json"].encode()).hexdigest() != tokenizer_hash:
