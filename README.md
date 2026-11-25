@@ -7,8 +7,9 @@ We measure how Muon, Polar Express, and regularized polar maps transform momentu
 Use Python 3.11 on macOS or Linux. The published runs used CPU PyTorch on an Apple M5 MacBook Pro.
 
 ```sh
-git clone --depth 1 --branch reviewer-reproduction https://github.com/adit-yaya/cs182-final-proj.git
+git clone --filter=blob:none --sparse --depth 1 --branch reviewer-reproduction https://github.com/adit-yaya/cs182-final-proj.git
 cd cs182-final-proj
+git sparse-checkout set scripts utils models data results/w256_bpe results/w256_bpe_dense
 python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
