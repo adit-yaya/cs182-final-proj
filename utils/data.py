@@ -2,9 +2,10 @@
 
 import hashlib
 import math
+import random
 
 from pathlib import Path
-from datasets import IterableDataset, load_dataset
+from datasets import load_dataset
 import tiktoken
 import torch
 
@@ -22,7 +23,7 @@ def document_split(text):
 def documents(data, split):
     if data["dataset"] == "bundled-tiny":
         path = Path(__file__).resolve().parents[1] / "data/tiny" / (split + ".txt")
-        return IterableDataset.from_list([{"text": line} for line in path.read_text().splitlines()])
+        return [{"text": line} for line in path.read_text().splitlines()]
     stream = load_dataset(data["dataset"], name=data["subset"], revision=data["revision"],
                           split="train", streaming=True).select_columns(["text"])
     return stream.filter(lambda row: document_split(row["text"]) == split)
@@ -44,7 +45,10 @@ def batches(data, split, batch_size, context, seed=17, shuffle_buffer=1000):
         encode, eos = encoder.encode_ordinary, encoder.eot_token
     stream = documents(data, split)
     if split == "train":
-        stream = stream.shuffle(seed=seed, buffer_size=shuffle_buffer)
+        if data["dataset"] == "bundled-tiny":
+            random.Random(seed).shuffle(stream)
+        else:
+            stream = stream.shuffle(seed=seed, buffer_size=shuffle_buffer)
     buffer = []
     size = batch_size * context
     for row in stream:
