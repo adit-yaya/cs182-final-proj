@@ -3,7 +3,8 @@
 import hashlib
 import math
 
-from datasets import load_dataset
+from pathlib import Path
+from datasets import IterableDataset, load_dataset
 import tiktoken
 import torch
 
@@ -19,6 +20,9 @@ def document_split(text):
 
 
 def documents(data, split):
+    if data["dataset"] == "bundled-tiny":
+        path = Path(__file__).resolve().parents[1] / "data/tiny" / (split + ".txt")
+        return IterableDataset.from_list([{"text": line} for line in path.read_text().splitlines()])
     stream = load_dataset(data["dataset"], name=data["subset"], revision=data["revision"],
                           split="train", streaming=True).select_columns(["text"])
     return stream.filter(lambda row: document_split(row["text"]) == split)
@@ -26,7 +30,7 @@ def documents(data, split):
 
 def batches(data, split, batch_size, context, seed=17, shuffle_buffer=1000):
     """Pack documents with EOS separators into fixed-length next-token batches."""
-    if data["split_policy"] != SPLIT_POLICY:
+    if data["split_policy"] != ("fixed-files" if data["dataset"] == "bundled-tiny" else SPLIT_POLICY):
         raise ValueError("Checkpoint uses a different split policy.")
     if split not in ("train", "validation", "test"):
         raise ValueError(f"Unknown split: {split}")

@@ -1,0 +1,3 @@
+The team trained a small language model on a quiet Tuesday morning. Each researcher recorded the loss after the optimizer updated the model.
+A river runs through the valley and passes the old stone bridge. The water level rises after a long winter storm.
+Each matrix contains several directions. Some directions receive large updates while others change very little.

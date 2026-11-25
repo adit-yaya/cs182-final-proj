@@ -158,6 +158,7 @@ def main(argv=None):
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
     parser.add_argument("--bpe", type=Path, help="Saved byte-level BPE tokenizer JSON")
     parser.add_argument("--spectra", action="store_true", help="Log singular spectra at captures")
+    parser.add_argument("--tiny", action="store_true", help="Use the bundled train, validation and test documents")
     args = parser.parse_args(argv)
     if min(args.steps, args.batch, args.context, args.layers, args.width, args.heads,
            args.shuffle_buffer, args.eval_every, args.eval_batches) < 1:
@@ -186,10 +187,12 @@ def main(argv=None):
     torch.set_num_threads(4)
     print("Resolving FineWeb revision...", flush=True)
     revision_start = time.perf_counter()
-    revision = HfApi().dataset_info(DATASET, revision=args.revision).sha
+    revision = "local" if args.tiny else HfApi().dataset_info(DATASET, revision=args.revision).sha
     print(f"FineWeb revision resolved in {time.perf_counter() - revision_start:.1f}s", flush=True)
     data = dict(dataset=DATASET, subset=args.subset, revision=revision,
                 tokenizer="gpt2", split_policy=SPLIT_POLICY)
+    if args.tiny:
+        data.update(dataset="bundled-tiny", split_policy="fixed-files")
     if args.bpe:
         from tokenizers import Tokenizer
         raw = args.bpe.read_text()
