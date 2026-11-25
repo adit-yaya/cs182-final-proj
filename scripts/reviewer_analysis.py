@@ -70,7 +70,7 @@ def analyze(out, use_runs=False):
         for op, block, t in np.ndindex(values.shape[:3]):
             row = values[op, block, t]
             rows.append([method, OPS[op], block+1, STEPS[t], *[x if np.isfinite(x) else "" for x in row]])
-        avg = values.mean(axis=(0,1,2))
+        avg = [values[..., column].mean() for column in range(values.shape[-1])]
         delta = val[m,:,-1] - val[0,:,-1]
         summary.append([method, avg[1], avg[0], avg[5] if method in CUT else "", val[m,:,-1].mean(),
                         delta.mean(), delta.std(ddof=1)])
